@@ -43,43 +43,72 @@
     <h1>🔊 Soundboard</h1>
     <div id="board"></div>
 
-    <script>
-        // Danh sách file m4a từ ảnh của bạn
-        const sounds = [
-            'ring.m4a',
-            'reveal.m4a',
-            'chime.m4a',
-            'end.m4a',
-            'footsteps.m4a',
-            'court_chatter.m4a',
-            'shock.m4a',
-            'come home.m4a'
-        ];
+<script>
+    const sounds = [
+        'ring.m4a',
+        'reveal.m4a',
+        'chime.m4a',
+        'end.m4a',
+        'footsteps.m4a',
+        'court_chatter.m4a',
+        'shock.m4a',
+        'come home.m4a'
+    ];
 
-        const soundFolder = './';
-        const board = document.getElementById('board');
-        let currentAudio = null;
+    const soundFolder = './';
+    const board = document.getElementById('board');
+    
+    // Khởi tạo Web Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let currentSource = null;
 
-        sounds.forEach(file => {
-            const btn = document.createElement('button');
-            btn.className = 'sound-btn';
-            
-            // Đổi tên file thành nhãn hiển thị đẹp (bỏ đuôi .m4a, đổi dấu _ thành khoảng trắng)
-            const label = file.replace('.m4a', '').replace(/_/g, ' ');
-            btn.innerText = label;
+    sounds.forEach(file => {
+        const btn = document.createElement('button');
+        btn.className = 'sound-btn';
+        
+        const label = file.replace('.m4a', '').replace(/_/g, ' ');
+        btn.innerText = label;
 
-            btn.onclick = () => {
-                // Nếu đang phát nhạc khác thì dừng lại trước khi phát nhạc mới
-                if (currentAudio) {
-                    currentAudio.pause();
-                    currentAudio.currentTime = 0;
-                }
-                currentAudio = new Audio(soundFolder + encodeURIComponent(file));
-                currentAudio.play();
-            };
+        btn.onclick = async () => {
+            // Khởi tạo AudioContext ở lần click đầu tiên (bắt buộc theo chính sách trình duyệt)
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
 
-            board.appendChild(btn);
-        });
-    </script>
+            // Dừng âm thanh đang phát trước đó
+            if (currentSource) {
+                currentSource.stop();
+            }
+
+            try {
+                // 1. Tải file âm thanh
+                const response = await fetch(soundFolder + encodeURIComponent(file));
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+                // 2. Tạo bộ nguồn phát (BufferSource)
+                const source = audioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+
+                // 3. Tạo bộ khuếch đại (GainNode) - Tăng 500%
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.value = 5.0; // 5.0 = 500% (1.0 = 100%)
+
+                // 4. Kết nối: Nguồn -> Khuếch đại -> Loa
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                // 5. Phát âm thanh
+                source.start(0);
+                currentSource = source;
+            } catch (err) {
+                console.error("Lỗi phát âm thanh:", err);
+            }
+        };
+
+        board.appendChild(btn);
+    });
+</script>
 </body>
 </html>
