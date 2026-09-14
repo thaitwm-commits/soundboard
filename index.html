@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sound Cues — The Merchant of Venice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #15130f;
+    --panel: #1d1a13;
+    --panel-2: #221e16;
+    --line: #37311f;
+    --line-soft: #2a2519;
+    --ink: #efe7d6;
+    --ink-muted: #a89d84;
+    --ink-faint: #6f6551;
+    --amber: #e2a23b;
+    --amber-dim: #7a5a26;
+    --red: #c1443b;
+    --red-dim: #5c231f;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  body {
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(226,162,59,0.06), transparent 40%),
+      radial-gradient(circle at 85% 10%, rgba(193,68,59,0.05), transparent 35%);
+  }
+
+  .display { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(21, 19, 15, 0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 28px 16px;
+  }
+
+  .topbar-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .title-block h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 32px;
+    letter-spacing: 0.01em;
+    margin: 0 0 4px;
+    color: var(--ink);
+  }
+
+  .title-block .subline {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .title-block .subline span + span::before {
+    content: "·";
+    margin: 0 8px;
+    color: var(--ink-faint);
+  }
+
+  #stopAllBtn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--red);
+    background: transparent;
+    border: 1.5px solid var(--red-dim);
+    border-radius: 3px;
+    padding: 12px 22px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+  #stopAllBtn:hover {
+    border-color: var(--red);
+    background: rgba(193, 68, 59, 0.1);
+  }
+  #stopAllBtn:active { transform: translateY(1px); }
+  #stopAllBtn.is-live {
+    color: var(--bg);
+    background: var(--red);
+    border-color: var(--red);
+  }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 14px auto 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #searchInput {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 9px 12px;
+    border-radius: 3px;
+    outline: none;
+  }
+  #searchInput::placeholder { color: var(--ink-faint); }
+  #searchInput:focus { border-color: var(--amber-dim); }
+
+  #reloadBtn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 9px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #reloadBtn:hover { color: var(--ink); border-color: var(--amber-dim); }
+
+  /* ---------- main ---------- */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 28px 80px;
+  }
+
+  .scene-group { margin-bottom: 36px; }
+  .scene-group:last-child { margin-bottom: 0; }
+
+  .scene-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .scene-heading h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--amber);
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .scene-heading .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .scene-heading .count {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .cue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .cue {
+    position: relative;
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 12px 14px 11px;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 74px;
+  }
+
+  .cue:hover { border-color: var(--amber-dim); }
+
+  .cue .cue-index {
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .cue .cue-label {
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+
+  .cue .cue-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: auto;
+  }
+
+  .cue .cue-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+    flex-shrink: 0;
+  }
+
+  .cue.is-playing {
+    border-color: var(--amber);
+    background: linear-gradient(180deg, rgba(226,162,59,0.10), rgba(226,162,59,0.03));
+  }
+  .cue.is-playing .cue-dot {
+    background: var(--amber);
+    box-shadow: 0 0 0 3px rgba(226,162,59,0.18);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  .cue.is-playing .cue-index { color: var(--amber); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ---------- empty / error states ---------- */
+  .state-box {
+    max-width: 620px;
+    margin: 40px auto;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 4px;
+    padding: 28px 30px;
+  }
+  .state-box h3 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 24px;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .state-box p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-muted);
+    margin: 0 0 14px;
+  }
+  .state-box code, .state-box pre {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+  }
+  .state-box pre {
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    border-radius: 3px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    line-height: 1.6;
+    white-space: pre;
+  }
+  .state-box .err { color: var(--red); }
+
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 28px 40px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.03em;
+  }
+
+  @media (max-width: 560px) {
+    .topbar { padding: 16px 16px 14px; }
+    main { padding: 22px 16px 60px; }
+    .cue-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .title-block h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="title-block">
+      <h1>Sound Cues — The Merchant of Venice</h1>
+      <div class="subline">
+        <span>Group 6 · backstage board</span>
+        <span id="metaCount">loading…</span>
+        <span id="metaSynced"></span>
+      </div>
+    </div>
+    <button id="stopAllBtn" type="button">■ STOP ALL</button>
+  </div>
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Tìm cue theo tên… (vd: applause, chime, gavel)" autocomplete="off" />
+    <button id="reloadBtn" type="button">↻ reload cues</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="state-box"><h3>Đang tải danh sách cue…</h3></div>
+</main>
+
+<footer id="footerNote"></footer>
+
+<script>
+(function () {
+  const mainEl = document.getElementById('main');
+  const metaCountEl = document.getElementById('metaCount');
+  const metaSyncedEl = document.getElementById('metaSynced');
+  const stopAllBtn = document.getElementById('stopAllBtn');
+  const searchInput = document.getElementById('searchInput');
+  const reloadBtn = document.getElementById('reloadBtn');
+  const footerNote = document.getElementById('footerNote');
+
+  /** @type {Map<string, {audio:HTMLAudioElement, tile:HTMLElement}>} */
+  const registry = new Map();
+  let manifest = null;
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec <= 0) return '';
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function stopAll() {
+    registry.forEach(({ audio }) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  }
+
+  function updateGlobalLiveState() {
+    let anyPlaying = false;
+    registry.forEach(({ audio }) => { if (!audio.paused) anyPlaying = true; });
+    stopAllBtn.classList.toggle('is-live', anyPlaying);
+  }
+
+  function toggleCue(pathKey) {
+    const entry = registry.get(pathKey);
+    if (!entry) return;
+    const { audio } = entry;
+    if (audio.paused) {
+      audio.currentTime = 0;
+      audio.play().catch((err) => console.warn('Playback failed:', pathKey, err));
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }
+
+  function buildCueTile(cue, index) {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'cue';
+    tile.dataset.label = cue.label.toLowerCase();
+
+    const idx = document.createElement('div');
+    idx.className = 'cue-index';
+    idx.textContent = String(index).padStart(2, '0');
+
+    const label = document.createElement('div');
+    label.className = 'cue-label';
+    label.textContent = cue.label;
+
+    const meta = document.createElement('div');
+    meta.className = 'cue-meta';
+    const dot = document.createElement('span');
+    dot.className = 'cue-dot';
+    const dur = document.createElement('span');
+    dur.className = 'cue-dur';
+    dur.textContent = '';
+    meta.appendChild(dot);
+    meta.appendChild(dur);
+
+    tile.appendChild(idx);
+    tile.appendChild(label);
+    tile.appendChild(meta);
+
+    const audio = new Audio(cue.path);
+    audio.preload = 'metadata';
+    audio.addEventListener('loadedmetadata', () => {
+      dur.textContent = fmtTime(audio.duration);
+    });
+    audio.addEventListener('play', () => {
+      tile.classList.add('is-playing');
+      updateGlobalLiveState();
+    });
+    const onStop = () => {
+      tile.classList.remove('is-playing');
+      updateGlobalLiveState();
+    };
+    audio.addEventListener('pause', onStop);
+    audio.addEventListener('ended', onStop);
+    audio.addEventListener('error', () => {
+      dur.textContent = 'lỗi file';
+      dur.style.color = 'var(--red)';
+    });
+
+    tile.addEventListener('click', () => toggleCue(cue.path));
+
+    registry.set(cue.path, { audio, tile });
+    return tile;
+  }
+
+  function renderGroups(groups) {
+    mainEl.innerHTML = '';
+    groups.forEach((group) => {
+      const section = document.createElement('section');
+      section.className = 'scene-group';
+      section.dataset.group = group.name.toLowerCase();
+
+      const heading = document.createElement('div');
+      heading.className = 'scene-heading';
+      const h2 = document.createElement('h2');
+      h2.textContent = group.name.toUpperCase();
+      const rule = document.createElement('div');
+      rule.className = 'rule';
+      const count = document.createElement('div');
+      count.className = 'count';
+      count.textContent = `${group.cues.length} cue${group.cues.length === 1 ? '' : 's'}`;
+      heading.appendChild(h2);
+      heading.appendChild(rule);
+      heading.appendChild(count);
+
+      const grid = document.createElement('div');
+      grid.className = 'cue-grid';
+      group.cues.forEach((cue, i) => grid.appendChild(buildCueTile(cue, i + 1)));
+
+      section.appendChild(heading);
+      section.appendChild(grid);
+      mainEl.appendChild(section);
+    });
+  }
+
+  function renderEmptyState() {
+    mainEl.innerHTML = `
+      <div class="state-box">
+        <h3>Chưa có file âm thanh nào</h3>
+        <p>Thêm file .mp3 / .wav / .ogg vào thư mục <code>sound/</code>, tốt nhất
+        tổ chức theo từng cảnh, rồi push lên git — bảng cue sẽ tự cập nhật:</p>
+        <pre>sound/
+  Scene 1.1/
+    01-applause.mp3
+    02-gavel-bang.mp3
+  Scene 1.2/
+    01-footsteps-fade.mp3
+    02-ring-chime.mp3</pre>
+        <p>Đánh số ở đầu tên file (01-, 02-…) để giữ đúng thứ tự cue. GitHub
+        Action sẽ tự quét thư mục và cập nhật <code>sounds.json</code> mỗi khi
+        bạn push — không cần sửa tay file HTML này.</p>
+      </div>`;
+  }
+
+  function renderErrorState(message) {
+    mainEl.innerHTML = `
+      <div class="state-box">
+        <h3 class="err">Không tải được danh sách cue</h3>
+        <p>${message}</p>
+        <p>Nếu bạn đang mở file này trực tiếp từ máy (<code>file://</code>),
+        trình duyệt thường chặn việc đọc <code>sounds.json</code>. Hãy chạy một
+        server tĩnh đơn giản trong thư mục dự án, ví dụ:</p>
+        <pre>python3 -m http.server 8000</pre>
+        <p>rồi mở <code>http://localhost:8000</code> — hoặc host qua GitHub
+        Pages, nơi mọi thứ sẽ hoạt động bình thường.</p>
+      </div>`;
+  }
+
+  function applyFilter() {
+    const q = searchInput.value.trim().toLowerCase();
+    document.querySelectorAll('.scene-group').forEach((section) => {
+      let visibleCount = 0;
+      section.querySelectorAll('.cue').forEach((tile) => {
+        const match = !q || tile.dataset.label.includes(q);
+        tile.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+      section.style.display = visibleCount === 0 ? 'none' : '';
+    });
+  }
+
+  async function loadManifest() {
+    metaCountEl.textContent = 'loading…';
+    metaSyncedEl.textContent = '';
+    try {
+      const res = await fetch(`sounds.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      manifest = await res.json();
+    } catch (err) {
+      renderErrorState(err.message || String(err));
+      metaCountEl.textContent = 'error';
+      return;
+    }
+
+    registry.clear();
+    const groups = (manifest.groups || []).filter((g) => g.cues && g.cues.length);
+
+    if (!groups.length) {
+      renderEmptyState();
+      metaCountEl.textContent = '0 cues';
+    } else {
+      renderGroups(groups);
+      metaCountEl.textContent = `${manifest.totalCues} cue${manifest.totalCues === 1 ? '' : 's'}`;
+    }
+
+    if (manifest.generatedAt) {
+      const d = new Date(manifest.generatedAt);
+      metaSyncedEl.textContent = `synced ${d.toLocaleString()}`;
+    }
+  }
+
+  stopAllBtn.addEventListener('click', stopAll);
+  searchInput.addEventListener('input', applyFilter);
+  reloadBtn.addEventListener('click', () => { stopAll(); loadManifest(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stopAll();
+    if (e.key === '/' && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+
+  footerNote.textContent = 'Esc = stop all · / = tìm kiếm · cue tự cập nhật khi push vào thư mục sound/';
+
+  loadManifest();
+})();
+</script>
+</body>
+</html>
