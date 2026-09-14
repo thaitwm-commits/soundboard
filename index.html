@@ -22,7 +22,6 @@
         }
         h2 { margin-top: 0; color: #89b4fa; }
         
-        /* Volume Control Styling */
         .volume-control {
             display: flex;
             align-items: center;
@@ -35,7 +34,6 @@
         }
         input[type=range] { cursor: pointer; width: 50%; }
 
-        /* Board Grid */
         .board { 
             display: flex; 
             flex-wrap: wrap; 
@@ -58,7 +56,6 @@
         }
         .sound-btn:hover { background-color: #45475a; border-color: #89b4fa; }
         
-        /* BGM Button Active States */
         .bgm-btn.active {
             background-color: #a6e3a1;
             color: #11111b;
@@ -101,13 +98,14 @@
         <button class="stop-bgm-btn" id="stopBgmBtn">⏹ Tắt BGM (Giảm dần đến hết bài)</button>
     </div>
 
-    <!-- KHU VỰC 2: SOUND EFFECTS -->
+    <!-- KHU VỰC 2: SOUND EFFECTS (KHUẾCH ĐẠI 500%) -->
     <div class="section">
-        <h2>🔊 Hiệu Ứng Soundboard</h2>
+        <h2>🔊 Hiệu Ứng Soundboard (Max 500%)</h2>
         <div class="volume-control">
-            <span>🔊 Âm lượng SFX:</span>
-            <input type="range" id="sfxVolume" min="0" max="1" step="0.01" value="1">
-            <span id="sfxVolVal">100%</span>
+            <span>⚡ Âm lượng SFX:</span>
+            <!-- Max slider = 5 tương đương 500% -->
+            <input type="range" id="sfxVolume" min="0" max="5" step="0.1" value="5">
+            <span id="sfxVolVal">500%</span>
         </div>
         <div class="board" id="sfxBoard"></div>
     </div>
@@ -116,32 +114,20 @@
 <script>
     const soundFolder = './';
 
-    // Danh sách File
     const bgmFiles = ['court.m4a', 'home.m4a'];
     const sfxFiles = ['ring.m4a', 'reveal.m4a', 'chime.m4a', 'end.m4a', 'footsteps.m4a', 'court_chatter.m4a', 'shock.m4a', 'come home.m4a'];
 
-    // Quản lý Audio & Volume
+    // --- QUẢN LÝ BGM ---
     let currentBgmAudio = null;
     let activeBgmBtn = null;
-    let currentSfxAudio = null;
-
     const bgmVolSlider = document.getElementById('bgmVolume');
-    const sfxVolSlider = document.getElementById('sfxVolume');
 
-    // Cập nhật âm lượng liên tục khi kéo thanh Slider
     bgmVolSlider.addEventListener('input', (e) => {
         const val = e.target.value;
         document.getElementById('bgmVolVal').innerText = Math.round(val * 100) + '%';
         if (currentBgmAudio) currentBgmAudio.volume = val;
     });
 
-    sfxVolSlider.addEventListener('input', (e) => {
-        const val = e.target.value;
-        document.getElementById('sfxVolVal').innerText = Math.round(val * 100) + '%';
-        if (currentSfxAudio) currentSfxAudio.volume = val;
-    });
-
-    // --- KHỦ TẠO BẢNG BGM ---
     const bgmBoard = document.getElementById('bgmBoard');
     bgmFiles.forEach(file => {
         const btn = document.createElement('button');
@@ -153,21 +139,18 @@
     });
 
     function playBGM(file, btn) {
-        // Nếu nhấn lại đúng bài BGM đang chạy -> dừng bài đó
         if (currentBgmAudio && activeBgmBtn === btn) {
             stopBgmWithFadeOut();
             return;
         }
 
-        // Tắt bài BGM cũ ngay lập tức nếu chọn bài BGM khác
         if (currentBgmAudio) {
             currentBgmAudio.pause();
             if (activeBgmBtn) activeBgmBtn.classList.remove('active', 'stopping');
         }
 
-        // Khởi tạo BGM mới
         currentBgmAudio = new Audio(soundFolder + encodeURIComponent(file));
-        currentBgmAudio.loop = true; // Bật lặp liên tục
+        currentBgmAudio.loop = true;
         currentBgmAudio.volume = bgmVolSlider.value;
         currentBgmAudio.play();
 
@@ -175,7 +158,6 @@
         btn.classList.add('active');
     }
 
-    // Tắt BGM bằng cách Fade Out (giảm âm lượng dần đến hết bài)
     document.getElementById('stopBgmBtn').onclick = stopBgmWithFadeOut;
 
     function stopBgmWithFadeOut() {
@@ -189,7 +171,6 @@
             btnToReset.classList.add('stopping');
         }
 
-        // Giảm âm lượng từ từ (Fade out trong 2 giây)
         let fadeInterval = setInterval(() => {
             if (audioToStop.volume > 0.05) {
                 audioToStop.volume -= 0.05;
@@ -205,23 +186,65 @@
         activeBgmBtn = null;
     }
 
-    // --- KHỦ TẠO BẢNG SOUNDBOARD (SFX) ---
+    // --- QUẢN LÝ SOUNDBOARD SFX (WEB AUDIO API KHUẾCH ĐẠI 500%) ---
+    const sfxVolSlider = document.getElementById('sfxVolume');
+    
+    // Audio Context & Gain Node dành riêng cho SFX
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let sfxGainNode = null;
+    let currentSfxSource = null;
+
+    sfxVolSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById('sfxVolVal').innerText = Math.round(val * 100) + '%';
+        // Điều chỉnh Gain trực tiếp trong khi sound đang chạy
+        if (sfxGainNode) {
+            sfxGainNode.gain.value = val;
+        }
+    });
+
     const sfxBoard = document.getElementById('sfxBoard');
     sfxFiles.forEach(file => {
         const btn = document.createElement('button');
         btn.className = 'sound-btn';
         btn.innerText = file.replace('.m4a', '').replace(/_/g, ' ');
 
-        btn.onclick = () => {
-            // Ngắt SFX trước đó nếu đang phát dở
-            if (currentSfxAudio) {
-                currentSfxAudio.pause();
-                currentSfxAudio.currentTime = 0;
+        btn.onclick = async () => {
+            // Khởi tạo AudioContext ở click đầu tiên
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                sfxGainNode = audioCtx.createGain();
+                sfxGainNode.connect(audioCtx.destination);
             }
-            // Mở SFX mới (Hoàn toàn độc lập, KHÔNG ảnh hưởng BGM đang chạy)
-            currentSfxAudio = new Audio(soundFolder + encodeURIComponent(file));
-            currentSfxAudio.volume = sfxVolSlider.value;
-            currentSfxAudio.play();
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            // Ngắt soundboard trước đó nếu đang phát
+            if (currentSfxSource) {
+                try { currentSfxSource.stop(); } catch(e) {}
+            }
+
+            try {
+                // Tải dữ liệu âm thanh
+                const response = await fetch(soundFolder + encodeURIComponent(file));
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+                // Tạo nguồn âm thanh mới
+                const source = audioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+
+                // Áp dụng mức âm lượng từ slider (Max 5 = 500%)
+                sfxGainNode.gain.value = parseFloat(sfxVolSlider.value);
+
+                source.connect(sfxGainNode);
+                source.start(0);
+                currentSfxSource = source;
+            } catch (err) {
+                console.error("Lỗi phát SFX:", err);
+            }
         };
 
         sfxBoard.appendChild(btn);
